@@ -7,13 +7,13 @@ import 'package:bulltradex/features/auth/view/widgets/custom_text_field.dart';
 import 'package:bulltradex/core/utils/validators.dart';
 import 'package:bulltradex/routes/routes.dart';
 import 'package:http/http.dart' as http;
+import 'package:bulltradex/features/auth/data/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
-
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -22,33 +22,27 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() async {
   if (_formKey.currentState!.validate()) {
-    setState(() {
-      _isSuccess = true;
-      Navigator.pushReplacementNamed(context, Routes.home);
-    });
-
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/auth/login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        'email': _emailController.text,
-        'password': _passwordController.text,
-      }),
+    AuthService authService = AuthService();
+    String? token = await authService.login(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
     );
 
-    if (response.statusCode == 200) {
-      // Handle login success (e.g., store token and navigate to Home)
-      final data = json.decode(response.body);
-      print(data['message']);
-      Navigator.pushReplacementNamed(context, Routes.home);
+    if (token != null) {
+      setState(() {
+        _isSuccess = true;
+      });
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pushReplacementNamed(context, Routes.home);
+      });
     } else {
-      // Handle error (e.g., show error message)
-      print('Login failed: ${response.body}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login failed. Check credentials.")),
+      );
     }
   }
 }
+
 
   @override
   Widget build(BuildContext context) {
